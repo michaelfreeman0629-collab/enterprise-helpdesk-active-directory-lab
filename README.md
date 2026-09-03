@@ -316,7 +316,7 @@ Windows denied the request.
 
 This confirmed that the Production share was restricted to authorized members of the `KAP-Production` security group.
 
-![Unauthorized Production Share Access](images/04-Production-Share-Access-Denied.PNG)
+![Unauthorized Production Share Access](images/04-Production-Share_Access-Denied.PNG)
 
 ---
 
