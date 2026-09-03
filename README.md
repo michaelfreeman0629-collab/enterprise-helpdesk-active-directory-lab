@@ -2,9 +2,13 @@
 
 ## Overview
 
-This project simulates an enterprise Windows environment for a fictional company, King Angel Productions. I built a Windows Server domain controller, configured Active Directory Domain Services (AD DS) and DNS, created an organizational structure for multiple departments, provisioned domain users, implemented security groups, joined a Windows 10 workstation to the domain, and configured role-based access to shared company resources.
+This project simulates an enterprise Windows environment for a fictional company, King Angel Productions.
 
-The purpose of this lab is to demonstrate hands-on skills used in Help Desk, IT Support, Active Directory administration, identity and access management, Windows administration, networking, and troubleshooting.
+I built a Windows Server domain environment, configured Active Directory Domain Services (AD DS) and DNS, created an organizational structure for multiple departments, provisioned domain users and security groups, joined a Windows 10 workstation to the domain, configured role-based access to company resources, implemented Group Policy, and performed common Help Desk troubleshooting tasks.
+
+The purpose of this lab was to develop and demonstrate hands-on skills used in Help Desk, IT Support, Active Directory administration, Identity and Access Management (IAM), Windows administration, networking, access control, troubleshooting, and PowerShell.
+
+---
 
 ## Skills Demonstrated
 
@@ -14,42 +18,54 @@ The purpose of this lab is to demonstrate hands-on skills used in Help Desk, IT 
 - Domain controller configuration
 - DNS configuration and troubleshooting
 - Organizational Units (OUs)
-- User provisioning
+- User provisioning and account administration
 - Security group administration
+- Identity and Access Management (IAM)
 - Group-based access control
 - Principle of least privilege
 - Windows domain joining
 - Domain user authentication
+- Password resets
+- Account lockout troubleshooting
+- Group Policy administration
 - Network share configuration
 - Share and NTFS permissions
-- PowerShell
+- PowerShell Active Directory administration
 - Static IP and DNS configuration
-- Basic network troubleshooting
+- Windows Time synchronization
+- Network troubleshooting
+- Help Desk ticket troubleshooting
 
-- ## Lab Environment
+---
+
+## Lab Environment
 
 ### Domain Controller
 
-- **Hostname:** `KAP-DC01`
+- **Hostname:** KAP-DC01
 - **Operating System:** Windows Server 2025 Standard Evaluation
-- **Domain:** `kingangel.local`
-- **NetBIOS Domain:** `KINGANGEL`
-- **Private IP Address:** `192.168.50.10`
-- **Server Roles:** Active Directory Domain Services (AD DS) and DNS Server
+- **Domain:** kingangel.local
+- **NetBIOS Domain:** KINGANGEL
+- **Private IP Address:** 192.168.50.10
+- **Server Roles:** Active Directory Domain Services (AD DS) and DNS
 
 ### Employee Workstation
 
-- **Virtual Machine:** `HelpDeskLab-Fixed`
+- **Hostname:** HelpDeskLab-Fixed
 - **Operating System:** Windows 10
-- **Private IP Address:** `192.168.50.20`
-- **Domain:** `kingangel.local`
+- **Private IP Address:** 192.168.50.20
+- **Domain:** kingangel.local
 
-### Virtualization & Networking
+### Virtualization
 
-- Oracle VirtualBox
-- NAT adapter for internet connectivity
-- Internal VirtualBox network: `KAP-LAN`
-- Domain Controller and workstation connected through the private `KAP-LAN` network
+The environment was built using Oracle VirtualBox.
+
+Two virtual network connections were used:
+
+- **NAT** — Internet connectivity
+- **KAP-LAN** — Private internal network between the domain controller and workstation
+
+---
 
 ## Network Architecture
 
@@ -58,288 +74,556 @@ The purpose of this lab is to demonstrate hands-on skills used in Help Desk, IT 
                             |
                            NAT
                             |
-             +--------------+--------------+
-             |                             |
+              +-------------+-------------+
+              |                           |
          KAP-DC01                  HelpDeskLab-Fixed
-    Windows Server 2025               Windows 10
-     Domain Controller               Workstation
-       AD DS + DNS
-             |                             |
-      192.168.50.10                  192.168.50.20
-             |                             |
-             +---------- KAP-LAN ----------+
+      Windows Server 2025             Windows 10
+       192.168.50.10                192.168.50.20
+              |                           |
+              +--------- KAP-LAN ---------+
+                   Private Network
+
+Domain: kingangel.local
 ```
 
-## Active Directory Organizational Structure
+---
 
-I created a parent Organizational Unit (OU) named `KAP-Employees` to organize company user accounts.
+# Active Directory Configuration
 
-Under `KAP-Employees`, I created separate departmental OUs for:
+## Organizational Unit Structure
+
+I created a parent Organizational Unit named:
+
+`KAP-Employees`
+
+Departmental OUs were then created to organize users based on their business roles:
 
 - Production
 - Finance
 - Human Resources
 - Marketing
-- IT-Security
+- IT Security
 - Executives
 
-This structure separates users by business function and provides a foundation for centralized administration, Group Policy, and access management.
-
-### Department Security Groups
-
-I created Global Security Groups for each department:
-
-- `KAP-Production`
-- `KAP-Finance`
-- `KAP-HR`
-- `KAP-Marketing`
-- `KAP-IT-Security`
-- `KAP-Executives`
-
-Instead of assigning resource permissions directly to individual employees, users are assigned to security groups based on their job responsibilities.
-
-This follows a scalable access-control model:
-
-`User → Security Group → Resource Permission`
-
-### Active Directory OU Structure
+This structure allows users and policies to be managed based on department and job function.
 
 ![Active Directory OU Structure](images/01-Active-Directory-OU-Structure.PNG)
 
-## Domain User Provisioning
+---
 
-I created domain user accounts in Active Directory and placed each employee in the appropriate departmental Organizational Unit.
+## Security Groups
 
-### Maya Johnson
+I created Global Security Groups for each major department:
 
-- **Username:** `mjohnson`
+- KAP-Production
+- KAP-Finance
+- KAP-HR
+- KAP-Marketing
+- KAP-IT-Security
+- KAP-Executives
+
+Rather than assigning permissions directly to individual employees, users were assigned to security groups.
+
+The access-control model used throughout the lab was:
+
+```text
+User
+  ↓
+Security Group
+  ↓
+Resource Permission
+```
+
+This makes access easier to administer and follows the principle of least privilege.
+
+---
+
+# Domain User Provisioning
+
+Multiple employee accounts were created to simulate real company users.
+
+## Maya Johnson
+
+- **Username:** mjohnson
 - **Department:** Production
-- **OU:** Production
-- **Security Group:** `KAP-Production`
-- Required to change temporary password at first login
+- **Security Group:** KAP-Production
 
-### Marcus Reed
+Maya was created with a temporary password and required to change the password at first login.
 
-- **Username:** `mreed`
-- **Position:** Payroll Specialist
+## Marcus Reed
+
+- **Username:** mreed
+- **Role:** Payroll Specialist
 - **Department:** Finance
-- **OU:** Finance
-- **Security Group:** `KAP-Finance`
-- Required to change temporary password at first login
+- **Security Group:** KAP-Finance
 
-This process demonstrated user provisioning, departmental organization, security group membership, and role-based access management.
+Marcus was also created with a temporary password and required to change it at first login.
 
-## Windows 10 Domain Join
+---
 
-I configured the Windows 10 workstation with the private IP address `192.168.50.20` and configured the domain controller at `192.168.50.10` as its DNS server.
+# Windows 10 Domain Join
 
-After verifying network connectivity and DNS resolution, I successfully joined the workstation to:
+The Windows 10 workstation was configured with the private IP address:
+
+`192.168.50.20`
+
+The workstation's DNS configuration was pointed toward the domain controller:
+
+`192.168.50.10`
+
+After verifying network and DNS connectivity, the workstation was successfully joined to:
 
 `kingangel.local`
 
-I then authenticated to the workstation using Maya Johnson's Active Directory account:
+I then authenticated to Windows using the domain account:
 
 `KINGANGEL\mjohnson`
 
-I verified the authenticated identity using:
-
-I verified the authenticated identity using:
-
-```cmd
-whoami
-```
-
-The command returned:
+The `whoami` command verified the authenticated identity:
 
 ```text
 kingangel\mjohnson
 ```
 
-This confirmed that the workstation was successfully joined to the domain and that Active Directory authentication was functioning.
-
-### Domain User Authentication
-
 ![Domain User Login Verification](images/02-Domain-User-Login-Verification.PNG)
 
-## Role-Based File Share Permissions
+---
 
-To demonstrate group-based access control, I created a shared Production folder on the domain controller:
+# DNS Troubleshooting
 
-```text
-C:\KAP-Shares\Production
-```
+During the domain-join process, the workstation initially used an incorrect DNS server.
 
-The folder was shared across the network as:
+The workstation was attempting DNS resolution through:
 
-```text
-\\KAP-DC01\Production
-```
+`192.168.1.254`
 
-### Share Permissions
+instead of the Active Directory DNS server:
 
-I removed the default `Everyone` permission and granted the `KAP-Production` security group:
+`192.168.50.10`
 
-- Change
-- Read
-
-I intentionally did not grant Full Control to regular Production users in order to follow the principle of least privilege.
-
-### NTFS Permissions
-
-I also configured NTFS permissions for the `KAP-Production` security group and granted:
-
-- Modify
-- Read & Execute
-- List Folder Contents
-- Read
-- Write
-
-Permissions were assigned to the department security group rather than directly to an individual user.
-
-This creates the following access model:
-
-`Maya Johnson → KAP-Production → Production Shared Folder`
-
-## Authorized Access Test
-
-While logged into the domain workstation as Maya Johnson, I accessed:
-
-```text
-\\KAP-DC01\Production
-```
-
-I successfully created:
-
-```text
-Maya-Production-Test.txt
-```
-
-This verified that Maya received the appropriate access through her membership in the `KAP-Production` security group.
-
-### Production Share Access
-
-![Production Share Authorized Access](images/03-Production-Share-Authorized-Access.PNG)
-
-## DNS Troubleshooting
-
-During the domain-join process, the Windows 10 workstation initially attempted to resolve the Active Directory domain using the wrong DNS server.
-
-The workstation was querying:
-
-```text
-192.168.1.254
-```
-
-However, the Active Directory DNS server was running on the domain controller at:
-
-```text
-192.168.50.10
-```
-
-### Troubleshooting Process
-
-I first verified basic network connectivity to the domain controller:
+I tested basic connectivity to the domain controller:
 
 ```powershell
 ping 192.168.50.10
 ```
 
-The test returned four successful replies with 0% packet loss, confirming that the workstation could communicate with the domain controller over the network.
+The ping completed successfully, proving that basic IP connectivity existed.
 
-I then queried the domain controller's DNS service directly:
+I then tested DNS directly against the domain controller:
 
 ```powershell
 nslookup kingangel.local 192.168.50.10
 ```
 
-The domain resolved successfully, confirming that the DNS service on `KAP-DC01` was functioning.
+The domain resolved successfully.
 
-I corrected the workstation's DNS configuration using PowerShell:
+I corrected the workstation DNS configuration using PowerShell:
 
 ```powershell
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 192.168.50.10
 ```
 
-I then tested normal DNS resolution again:
+After correcting DNS, normal domain name resolution succeeded and the workstation was able to join the domain.
 
-```powershell
-nslookup kingangel.local
+### Troubleshooting Lesson
+
+This demonstrated an important troubleshooting concept:
+
+```text
+Successful network connectivity does not necessarily mean DNS is working.
 ```
 
-The workstation successfully used `192.168.50.10` to resolve the domain.
+Active Directory relies heavily on DNS, so DNS should be validated when troubleshooting domain authentication and domain-join problems.
+
+---
+
+# Role-Based File Share Permissions
+
+A Production department network share was created on the domain controller.
+
+### Server Folder
+
+`C:\KAP-Shares\Production`
+
+### Network Path
+
+`\\KAP-DC01\Production`
+
+## Share Permissions
+
+The default broad access was removed and the following security group was granted access:
+
+`KAP-Production`
+
+Permissions:
+
+- Change
+- Read
+
+Full Control was not granted.
+
+## NTFS Permissions
+
+`KAP-Production` was granted **Modify** permission, which provided the necessary ability to:
+
+- Read files
+- Create files
+- Modify files
+- List folder contents
+- Execute files
+
+The resulting access model was:
+
+```text
+Maya Johnson
+      ↓
+KAP-Production
+      ↓
+Production Shared Folder
+```
+
+---
+
+## Authorized Access Test
+
+I logged into the domain workstation as Maya Johnson.
+
+Because Maya belongs to `KAP-Production`, she successfully accessed:
+
+`\\KAP-DC01\Production`
+
+Maya then created:
+
+`Maya-Production-Test.txt`
+
+This confirmed that authorized Production employees could access and modify the departmental share.
+
+![Authorized Production Share Access](images/03-Production-Share-Authorized-Access.PNG)
+
+---
+
+## Unauthorized Access Test
+
+To verify least-privilege access controls, I logged into the domain workstation as Marcus Reed.
+
+Marcus belongs to the Finance department and is not a member of `KAP-Production`.
+
+Marcus attempted to access:
+
+`\\KAP-DC01\Production`
+
+Windows denied the request.
+
+This confirmed that the Production share was restricted to authorized members of the `KAP-Production` security group.
+
+![Unauthorized Production Share Access](images/04-Production-Share-Access-Denied.PNG)
+
+---
+
+# Help Desk Account Troubleshooting
+
+## Account Lockout
+
+A common Help Desk scenario was simulated by intentionally entering Maya Johnson's password incorrectly multiple times.
+
+After repeated failed authentication attempts, Maya's domain account became locked.
+
+Using Active Directory Users and Computers, I located Maya's account and performed an account unlock.
+
+Maya was then able to authenticate successfully using her correct credentials.
+
+This simulated a typical Help Desk workflow:
+
+```text
+User reports login problem
+        ↓
+Help Desk investigates account
+        ↓
+Locked account identified
+        ↓
+Account unlocked
+        ↓
+User authentication verified
+```
+
+---
+
+## Forgotten Password / Password Reset
+
+A second authentication ticket simulated a user who had forgotten their password.
+
+Using Active Directory Users and Computers, I:
+
+1. Located Maya Johnson's account.
+2. Selected **Reset Password**.
+3. Assigned a temporary lab password.
+4. Enabled **User must change password at next logon**.
+5. Verified that the temporary password allowed authentication.
+6. Confirmed Windows required Maya to create a new password before completing sign-in.
+7. Verified successful access after the password change.
+
+This demonstrated a standard enterprise Help Desk password-reset workflow while ensuring the Help Desk technician did not permanently control the employee's password.
+
+---
+
+# Group Policy Administration
+
+I created a Group Policy Object named:
+
+`KAP Employee Security Policy`
+
+The GPO was linked to the `KAP-Employees` OU.
+
+A user policy was configured to prohibit employee access to Windows Control Panel and PC settings.
+
+The configured policy was:
+
+`Prohibit access to Control Panel and PC settings`
+
+The policy was set to **Enabled**.
+
+On the Windows 10 workstation, I forced Group Policy processing using:
+
+```cmd
+gpupdate /force
+```
+
+After troubleshooting a time-synchronization issue, both Computer Policy and User Policy updated successfully.
+
+When Maya attempted to open Control Panel, Windows displayed a restriction message stating that the operation had been cancelled due to restrictions on the computer.
+
+This confirmed that the centrally managed Group Policy was successfully delivered from the domain environment and enforced on the employee workstation.
+
+![Group Policy Restriction Test](images/05-Group-Policy-Restriction-Test.PNG)
+
+---
+
+# Windows Time Synchronization Troubleshooting
+
+While testing Group Policy, the workstation reported:
+
+```text
+Computer Policy could not be updated successfully.
+The computer's clock is not synchronized with the clock of one of the domain controllers.
+```
+
+I investigated the issue instead of manually bypassing it.
+
+The workstation identified its domain time source as:
+
+`KAP-DC01.kingangel.local`
+
+However, the domain controller was initially using:
+
+`Local CMOS Clock`
+
+The domain controller was also configured with an incorrect time zone and incorrect system date.
+
+I corrected the server time zone and date and configured the domain controller to use an external NTP source.
+
+The Windows Time configuration was updated with:
+
+```cmd
+w32tm /config /manualpeerlist:"time.windows.com,0x8" /syncfromflags:manual /reliable:yes /update
+```
+
+The Windows Time service was restarted:
+
+```cmd
+net stop w32time
+net start w32time
+```
+
+The domain controller was then successfully synchronized:
+
+```cmd
+w32tm /resync
+```
+
+I returned to the Windows 10 workstation and ran:
+
+```cmd
+w32tm /resync
+```
+
+The workstation successfully synchronized with the domain environment.
+
+Finally, I reran:
+
+```cmd
+gpupdate /force
+```
+
+Both Computer Policy and User Policy completed successfully.
+
+### Troubleshooting Process
+
+```text
+Group Policy failure
+        ↓
+Clock synchronization error identified
+        ↓
+Workstation time source investigated
+        ↓
+Domain controller time configuration investigated
+        ↓
+NTP source configured
+        ↓
+Windows Time service restarted
+        ↓
+Domain controller synchronized
+        ↓
+Workstation synchronized
+        ↓
+Group Policy successfully applied
+```
+
+This demonstrated troubleshooting across authentication, Active Directory, Windows Time, Group Policy, and network services.
+
+---
+
+# PowerShell Active Directory Administration
+
+In addition to using graphical Active Directory management tools, I used PowerShell to query the domain.
+
+To display Active Directory users and their account status:
+
+```powershell
+Get-ADUser -Filter * | Select-Object Name,SamAccountName,Enabled
+```
+
+This returned domain accounts including Maya Johnson and Marcus Reed.
+
+I then queried the Production security group:
+
+```powershell
+Get-ADGroupMember -Identity "KAP-Production"
+```
+
+The output confirmed that Maya Johnson was a member of `KAP-Production`.
+
+![PowerShell Active Directory Administration](images/06-PowerShell-AD-Administration.PNG)
+
+Using PowerShell provides a faster and more scalable method for administering and auditing Active Directory environments than relying exclusively on graphical tools.
+
+---
+
+# Help Desk Ticket Summary
+
+| Ticket | Issue | Priority | Resolution |
+|---|---|---|---|
+| KAP-001 | New employee/domain account provisioning | Medium | Created domain users, assigned appropriate OUs and security groups, and verified authentication |
+| KAP-002 | User account locked after failed login attempts | High | Identified locked account in Active Directory, unlocked account, and verified successful login |
+| KAP-003 | User forgot domain password | Medium | Reset password, issued temporary credentials, required password change at next login, and verified access |
+| KAP-004 | Finance employee unable to access Production share | Medium | Verified user was not authorized for Production resources and confirmed access denial was expected least-privilege behavior |
+| KAP-005 | DNS/domain connectivity issue | High | Identified incorrect DNS configuration, corrected DNS to use the domain controller, and verified domain resolution |
+| KAP-006 | Group Policy failed because of clock synchronization | High | Investigated Windows Time configuration, configured NTP, synchronized domain systems, and successfully reapplied Group Policy |
+
+---
+
+# Problems Encountered and Resolutions
+
+## PowerShell Access Denied
+
+A network configuration command initially returned **Access is denied**.
+
+### Cause
+
+PowerShell had not been opened with administrative privileges.
 
 ### Resolution
 
-The issue was caused by the workstation using the wrong DNS server rather than the Active Directory-integrated DNS server.
+PowerShell was reopened using **Run as administrator** and the command completed successfully.
 
-After correcting the DNS configuration, the workstation successfully located `kingangel.local` and joined the domain.
+---
 
-## Problems Encountered
+## Incorrect PowerShell Parameter
 
-### PowerShell Administrative Permissions
+While configuring the workstation IP address, an incorrect parameter spelling caused the command to fail.
 
-When I initially attempted to configure the Windows 10 workstation's static IP address, PowerShell returned an `Access is denied` error.
+### Resolution
 
-I determined that PowerShell had not been launched with administrative privileges. I reopened PowerShell using **Run as Administrator** and successfully configured the network adapter.
+The command syntax was reviewed, corrected, and executed successfully.
 
-### PowerShell Syntax Error
+This reinforced the importance of carefully reading PowerShell error messages rather than assuming the underlying technology is failing.
 
-While configuring the workstation IP address, I initially mistyped the `-IPAddress` parameter.
+---
 
-After reviewing the command syntax and correcting the parameter, the static IP configuration completed successfully.
+## DNS Resolution Failure
 
-### DNS Resolution Issue
+The workstation could reach the domain controller by IP address but initially could not properly resolve the Active Directory domain.
 
-Although the workstation could successfully ping the domain controller, it initially could not properly resolve the Active Directory domain because it was using the wrong DNS server.
+### Resolution
 
-I isolated the DNS issue using `ping` and `nslookup`, corrected the workstation's DNS configuration, verified name resolution, and successfully joined the workstation to the domain.
+I used `ping` and `nslookup` to separate network connectivity from DNS resolution, identified the incorrect DNS configuration, and pointed the workstation to the domain controller's DNS service.
 
-## Lessons Learned
+---
 
-This lab helped me understand how several Windows enterprise technologies work together rather than treating them as separate concepts.
+## Group Policy / Time Synchronization Failure
 
-Key lessons included:
+Group Policy processing failed because the workstation and domain controller clocks were not synchronized.
 
-- Active Directory relies heavily on properly configured DNS.
-- Successful network connectivity does not guarantee successful domain name resolution.
-- Organizational Units organize and help administer Active Directory objects, while security groups are used to assign resource access.
-- Permissions should generally be assigned to security groups instead of individual users.
-- Share permissions and NTFS permissions work together when users access network resources.
-- Least privilege means providing enough access for a user to perform their job without unnecessarily granting administrative control.
-- Troubleshooting should follow a logical process of testing connectivity, name resolution, authentication, and permissions rather than changing multiple settings at once.
+### Resolution
 
-## Project Status
+I investigated Windows Time, corrected the domain controller's date/time configuration, configured an external NTP source, restarted the Windows Time service, synchronized both systems, and successfully reapplied Group Policy.
 
-🚧 **In Progress**
+---
 
-### Completed
+# Key Lessons Learned
 
-- Windows Server 2025 installation
-- Active Directory Domain Services deployment
-- Domain controller promotion
-- DNS configuration
-- `kingangel.local` domain creation
-- Organizational Unit structure
-- Department security groups
-- Domain user provisioning
-- Windows 10 private network configuration
-- DNS troubleshooting
-- Windows 10 domain join
-- Domain-user authentication
-- Production network share creation
-- Share permission configuration
-- NTFS permission configuration
-- Authorized Production access testing
+- Active Directory depends heavily on properly configured DNS.
+- Successful IP connectivity does not guarantee successful name resolution.
+- Organizational Units organize and manage directory objects, while security groups are used to assign access.
+- Permissions should generally be assigned to security groups rather than individual users.
+- Share permissions and NTFS permissions work together to determine effective network resource access.
+- Least privilege should be tested by verifying both authorized and unauthorized access.
+- Help Desk technicians must understand account lockouts, password resets, authentication, and access-control troubleshooting.
+- Group Policy provides centralized management of domain users and computers.
+- Accurate time synchronization is critical to Windows domain authentication and Group Policy.
+- PowerShell provides efficient ways to query and administer Active Directory.
+- Troubleshooting should follow a logical process instead of randomly changing settings.
 
-### Remaining
+---
 
-- Unauthorized access testing
-- Account lockout and password-reset troubleshooting
-- Group Policy configuration
-- Additional PowerShell administration
-- Help Desk ticket simulations
-- Final documentation
+# Project Status
 
-### Key Takeaway
+✅ **Complete**
 
-This demonstrated an important Active Directory troubleshooting principle: successful IP connectivity does not necessarily mean domain services will work. DNS must also be configured correctly so clients can locate domain resources and services.
+This lab successfully simulated an enterprise Windows domain and common Help Desk / IT Support administration tasks.
+
+### Completed Tasks
+
+- Installed and configured Windows Server 2025
+- Deployed Active Directory Domain Services
+- Promoted KAP-DC01 to a domain controller
+- Configured DNS
+- Created the kingangel.local domain
+- Created departmental Organizational Units
+- Created department-based security groups
+- Provisioned Active Directory users
+- Configured static IP addressing and DNS
+- Joined a Windows 10 workstation to the domain
+- Verified domain-user authentication
+- Created a departmental network share
+- Configured Share and NTFS permissions
+- Implemented group-based access control
+- Tested authorized resource access
+- Tested unauthorized resource access
+- Simulated and resolved an account lockout
+- Performed a Help Desk password reset
+- Required password change at next login
+- Created and linked a Group Policy Object
+- Enforced Group Policy on a domain workstation
+- Diagnosed and resolved Windows Time synchronization problems
+- Used PowerShell to query Active Directory
+- Documented Help Desk tickets and troubleshooting procedures
+
+---
+
+## Conclusion
+
+This project provided hands-on experience building and supporting a small enterprise Windows environment from the ground up.
+
+Rather than only configuring Active Directory, the lab focused on realistic support scenarios involving identity, authentication, DNS, permissions, password management, account lockouts, Group Policy, time synchronization, PowerShell, and troubleshooting.
+
+The environment demonstrates practical skills applicable to entry-level roles including **Help Desk Technician, IT Support Specialist, Service Desk Analyst, Desktop Support Technician, Junior Systems Administrator, IAM Analyst, and other Windows enterprise support roles.**
